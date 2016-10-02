@@ -53,7 +53,10 @@ class PlayerAI:
                     if point.is_mainframe:
                         mainframes_by_prox.append(point)
                     control_by_prox.append((chebyshev_distance(unit.position, point.position), point))
-            control_by_prox = sorted(control_by_prox, key=lambda x: x[0])
+            if len(control_by_prox):
+                control_by_prox = sorted(control_by_prox, key=lambda x: x[0])
+                closest_control = control_by_prox[0][1]
+                closest_mainframe = mainframes_by_prox[0]
 
             # Pickups by proximity
             pickups_by_prox = []
@@ -101,6 +104,11 @@ class PlayerAI:
                     unit.pickup_item_at_position()
                     break
 
+            # Activate shield if unit might take damage and is low on health if the unit has one
+            if (unit.damage_taken_last_turn > 0) and (unit.health <= 10) and (unit.num_shields > 0):
+                unit.activate_shield()
+                continue
+
             # Try to grab a weapon upgrade immediately
             if (unit.current_weapon_type == WeaponType.MINI_BLASTER) and len(weapons_by_prox):
                 if unit.last_move_result == MoveResult.BLOCKED_BY_ENEMY or \
@@ -113,11 +121,6 @@ class PlayerAI:
                     unit.move(random.choice(valid_directions))
                 print("Moving to pickup at {} w/ type {}".format(closest_weapon.position, closest_weapon.pickup_type))
                 unit.move_to_destination(closest_weapon.position)
-                continue
-
-            # Activate shield if unit might take damage and is low on health if the unit has one
-            if (unit.damage_taken_last_turn > 0) and (unit.health <= 10) and (unit.num_shields > 0):
-                unit.activate_shield()
                 continue
 
             # If able to shoot an enemy, do so
@@ -142,9 +145,10 @@ class PlayerAI:
                         if unit.check_move_in_direction(direction) == MoveResult.MOVE_VALID:
                             valid_directions.append(direction)
                     unit.move(random.choice(valid_directions))
-                print("Moving to pickup {} w/ type {}".format(closest_repair.position, closest_repair.pickup_type))
-                unit.move_to_destination(closest_repair.position)
-                continue
+                else:
+                    print("Moving to pickup {} w/ type {}".format(closest_repair.position, closest_repair.pickup_type))
+                    unit.move_to_destination(closest_repair.position)
+                    continue
 
             # Move towards a shield if unit doesn't have one
             if (unit.num_shields < 1) and len(shields_by_prox):
@@ -156,9 +160,26 @@ class PlayerAI:
                         if unit.check_move_in_direction(direction) == MoveResult.MOVE_VALID:
                             valid_directions.append(direction)
                     unit.move(random.choice(valid_directions))
-                print("Moving to pickup {} w/ type {}".format(closest_shield.position, closest_shield.pickup_type))
-                unit.move_to_destination(closest_shield.position)
-                continue
+                else:
+                    print("Moving to pickup {} w/ type {}".format(closest_shield.position, closest_shield.pickup_type))
+                    unit.move_to_destination(closest_shield.position)
+                    continue
+
+            # Control Point objectives
+            # Do not go for control points, just try to kill the other team :)
+            #if len(control_by_prox):
+            #    if unit.last_move_result == MoveResult.BLOCKED_BY_ENEMY or \
+            #                unit.last_move_result == MoveResult.BLOCKED_BY_FRIENDLY:
+            #        print("Moving in a random direction")
+            #        valid_directions = []
+            #        for direction in list(Direction):
+            #            if unit.check_move_in_direction(direction) == MoveResult.MOVE_VALID:
+            #                valid_directions.append(direction)
+            #        unit.move(random.choice(valid_directions))
+            #    else:
+            #        print("Moving to control point at {}".format(closest_control.position))
+            #        unit.move_to_destination(closest_control.position)
+            #        continue
 
             # Advance towards enemy units if no other objectives
             for enemy in enemies_by_prox:
