@@ -28,7 +28,7 @@ class PlayerAI:
         # concave/flanking b/c multiple shots = more damage
         # friendly units block shots
         # kill lowest health
-        # Weapon type preference depending on map
+        # Weapon type preference depending on map (cqc vs open, shotgun/rifle)
 
         for unit in friendly_units:
             print(unit.call_sign)
@@ -166,20 +166,19 @@ class PlayerAI:
                     continue
 
             # Control Point objectives
-            # Do not go for control points, just try to kill the other team :)
-            #if len(control_by_prox):
-            #    if unit.last_move_result == MoveResult.BLOCKED_BY_ENEMY or \
-            #                unit.last_move_result == MoveResult.BLOCKED_BY_FRIENDLY:
-            #        print("Moving in a random direction")
-            #        valid_directions = []
-            #        for direction in list(Direction):
-            #            if unit.check_move_in_direction(direction) == MoveResult.MOVE_VALID:
-            #                valid_directions.append(direction)
-            #        unit.move(random.choice(valid_directions))
-            #    else:
-            #        print("Moving to control point at {}".format(closest_control.position))
-            #        unit.move_to_destination(closest_control.position)
-            #        continue
+            if len(mainframes_by_prox):
+                if unit.last_move_result == MoveResult.BLOCKED_BY_ENEMY or \
+                            unit.last_move_result == MoveResult.BLOCKED_BY_FRIENDLY:
+                    print("Moving in a random direction")
+                    valid_directions = []
+                    for direction in list(Direction):
+                        if unit.check_move_in_direction(direction) == MoveResult.MOVE_VALID:
+                            valid_directions.append(direction)
+                    unit.move(random.choice(valid_directions))
+                else:
+                    print("Moving to control point at {}".format(closest_mainframe.position))
+                    unit.move_to_destination(closest_mainframe.position)
+                    continue
 
             # Advance towards enemy units if no other objectives
             for enemy in enemies_by_prox:
